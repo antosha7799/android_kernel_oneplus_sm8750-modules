@@ -1802,8 +1802,13 @@ int oplus_adfr_status_reset(void *dsi_panel)
 		ADFR_DEBUG("oplus_adfr_need_filter_auto_on_cmd:%d\n", p_oplus_adfr_params->need_filter_auto_on_cmd);
 		OPLUS_ADFR_TRACE_INT("oplus_adfr_need_filter_auto_on_cmd", p_oplus_adfr_params->need_filter_auto_on_cmd);
 
-		p_oplus_adfr_params->sa_min_fps = refresh_rate;
-		p_oplus_adfr_params->sa_min_fps_updated = false;
+		if (h_skew == STANDARD_ADFR) {
+			p_oplus_adfr_params->sa_min_fps = 1;
+			p_oplus_adfr_params->sa_min_fps_updated = true;
+		} else {
+			p_oplus_adfr_params->sa_min_fps = refresh_rate;
+			p_oplus_adfr_params->sa_min_fps_updated = false;
+		}
 		if (oplus_adfr_high_precision_sa_mode_is_enabled(p_oplus_adfr_params)) {
 			p_oplus_adfr_params->sa_high_precision_fps_updated = false;
 		}
@@ -4325,6 +4330,10 @@ ssize_t oplus_adfr_set_config_attr(struct kobject *obj,
 	sscanf(buf, "%x", &config);
 
 	p_oplus_adfr_params->config = config;
+	if (config & OPLUS_ADFR_CONFIG_GLOBAL) {
+		p_oplus_adfr_params->sa_min_fps = 1;
+		p_oplus_adfr_params->sa_min_fps_updated = true;
+	}
 	ADFR_INFO("oplus_adfr_config:0x%x\n", p_oplus_adfr_params->config);
 	OPLUS_ADFR_TRACE_INT("oplus_adfr_config", p_oplus_adfr_params->config);
 
@@ -4532,18 +4541,22 @@ ssize_t oplus_adfr_set_test_te_attr(struct kobject *obj,
 
 	sscanf(buf, "%u", &test_te_config);
 
-	p_oplus_adfr_params->test_te.config = test_te_config;
-	global_test_te_config = p_oplus_adfr_params->test_te.config;
-	ADFR_INFO("oplus_adfr_test_te_config:%u\n", p_oplus_adfr_params->test_te.config);
-	OPLUS_ADFR_TRACE_INT("oplus_adfr_test_te_config", p_oplus_adfr_params->test_te.config);
+	if (p_oplus_adfr_params->test_te.config != test_te_config) {
+		p_oplus_adfr_params->test_te.config = test_te_config;
+		global_test_te_config = p_oplus_adfr_params->test_te.config;
+		ADFR_INFO("oplus_adfr_test_te_config:%u\n", p_oplus_adfr_params->test_te.config);
+		OPLUS_ADFR_TRACE_INT("oplus_adfr_test_te_config", p_oplus_adfr_params->test_te.config);
 
-	test_te_irq = gpio_to_irq(p_oplus_adfr_params->test_te.gpio);
-	if (p_oplus_adfr_params->test_te.config != OPLUS_ADFR_TEST_TE_DISABLE) {
-		enable_irq(test_te_irq);
-		ADFR_INFO("enable test te irq\n");
+		test_te_irq = gpio_to_irq(p_oplus_adfr_params->test_te.gpio);
+		if (p_oplus_adfr_params->test_te.config != OPLUS_ADFR_TEST_TE_DISABLE) {
+			enable_irq(test_te_irq);
+			ADFR_INFO("enable test te irq\n");
+		} else {
+			disable_irq(test_te_irq);
+			ADFR_INFO("disable test te irq\n");
+		}
 	} else {
-		disable_irq(test_te_irq);
-		ADFR_INFO("disable test te irq\n");
+		ADFR_INFO("do nothing while the value of test_te_config was not changed\n");
 	}
 
 	OPLUS_ADFR_TRACE_END("oplus_adfr_set_test_te_attr");

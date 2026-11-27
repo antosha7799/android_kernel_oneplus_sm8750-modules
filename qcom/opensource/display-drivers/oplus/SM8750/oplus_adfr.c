@@ -1802,13 +1802,8 @@ int oplus_adfr_status_reset(void *dsi_panel)
 		ADFR_DEBUG("oplus_adfr_need_filter_auto_on_cmd:%d\n", p_oplus_adfr_params->need_filter_auto_on_cmd);
 		OPLUS_ADFR_TRACE_INT("oplus_adfr_need_filter_auto_on_cmd", p_oplus_adfr_params->need_filter_auto_on_cmd);
 
-		if (h_skew == STANDARD_ADFR) {
-			p_oplus_adfr_params->sa_min_fps = 1;
-			p_oplus_adfr_params->sa_min_fps_updated = true;
-		} else {
-			p_oplus_adfr_params->sa_min_fps = refresh_rate;
-			p_oplus_adfr_params->sa_min_fps_updated = false;
-		}
+		p_oplus_adfr_params->sa_min_fps = refresh_rate;
+		p_oplus_adfr_params->sa_min_fps_updated = false;
 		if (oplus_adfr_high_precision_sa_mode_is_enabled(p_oplus_adfr_params)) {
 			p_oplus_adfr_params->sa_high_precision_fps_updated = false;
 		}
